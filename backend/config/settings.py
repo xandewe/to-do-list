@@ -16,6 +16,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "apps.accounts.apps.AccountsConfig",
+    "apps.tasks.apps.TasksConfig",
     "health.apps.HealthConfig",
 ]
 
@@ -61,6 +63,8 @@ DATABASES = {
         },
     }
 }
+
+AUTH_USER_MODEL = "accounts.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
