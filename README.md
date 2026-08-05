@@ -120,6 +120,29 @@ docker compose down --volumes
 
 Use esse comando com cuidado: os dados removidos não podem ser recuperados sem um backup.
 
+## Convenções da API
+
+As rotas funcionais da API usam o prefixo versionado `/api/v1/`. O healthcheck é uma rota de infraestrutura e permanece fora do versionamento em `/api/health/`. Esta estrutura ainda não disponibiliza endpoints funcionais em `/api/v1/`.
+
+Endpoints de coleção usarão paginação no formato padrão do Django REST Framework:
+
+```json
+{
+  "count": 42,
+  "next": "http://localhost:8000/api/v1/tasks/?page=2",
+  "previous": null,
+  "results": []
+}
+```
+
+O parâmetro `page` seleciona a página. O parâmetro `page_size` controla a quantidade de registros, com padrão de 20 e máximo de 100.
+
+Para executar os testes da infraestrutura da API, a partir de `backend/`, use:
+
+```bash
+pytest config/tests health/tests -v
+```
+
 ## Health check
 
 Com os serviços em execução, consulte:
