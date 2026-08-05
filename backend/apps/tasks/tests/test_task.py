@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import UUID
 
 from django.apps import apps as django_apps
@@ -108,13 +109,17 @@ class TaskModelTests(TestCase):
         task_model = self.get_task_model()
         first = task_model.objects.create(owner=self.owner, title="First")
         second = task_model.objects.create(owner=self.owner, title="Second")
+        newer_created_at = timezone.now()
+        task_model.objects.filter(id=first.id).update(
+            created_at=newer_created_at - timedelta(seconds=1)
+        )
+        task_model.objects.filter(id=second.id).update(created_at=newer_created_at)
 
         ordered = list(task_model.objects.values_list("id", flat=True))
         self.assertEqual(ordered, [second.id, first.id])
 
-        same_created_at = timezone.now()
         task_model.objects.filter(id__in=(first.id, second.id)).update(
-            created_at=same_created_at
+            created_at=newer_created_at
         )
         ordered = list(task_model.objects.values_list("id", flat=True))
 
