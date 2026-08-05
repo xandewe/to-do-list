@@ -3,6 +3,7 @@ from importlib import import_module
 from django.test import SimpleTestCase
 from django.urls import Resolver404, get_resolver, resolve
 
+from apps.accounts.views import UserRegistrationView
 from health.views import HealthCheckView
 
 
@@ -39,9 +40,14 @@ class ApiRoutingTests(SimpleTestCase):
         with self.assertRaises(Resolver404):
             resolve("/api/v1/health/")
 
-    def test_domain_endpoints_are_not_created_prematurely(self):
+    def test_user_registration_route_is_available(self):
+        match = resolve("/api/v1/users/")
+
+        self.assertIs(match.func.view_class, UserRegistrationView)
+        self.assertEqual(match.url_name, "user-registration")
+
+    def test_other_domain_endpoints_are_not_created_prematurely(self):
         paths = (
-            "/api/v1/users/",
             "/api/v1/auth/",
             "/api/v1/categories/",
             "/api/v1/tasks/",

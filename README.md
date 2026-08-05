@@ -122,7 +122,7 @@ Use esse comando com cuidado: os dados removidos não podem ser recuperados sem 
 
 ## Convenções da API
 
-As rotas funcionais da API usam o prefixo versionado `/api/v1/`. O healthcheck é uma rota de infraestrutura e permanece fora do versionamento em `/api/health/`. Esta estrutura ainda não disponibiliza endpoints funcionais em `/api/v1/`.
+As rotas funcionais da API usam o prefixo versionado `/api/v1/`. O healthcheck é uma rota de infraestrutura e permanece fora do versionamento em `/api/health/`.
 
 Endpoints de coleção usarão paginação no formato padrão do Django REST Framework:
 
@@ -142,6 +142,67 @@ Para executar os testes da infraestrutura da API, a partir de `backend/`, use:
 ```bash
 pytest config/tests health/tests -v
 ```
+
+## Cadastro de usuário
+
+O cadastro é público e cria uma conta sem autenticar automaticamente o cliente:
+
+```text
+POST /api/v1/users/
+```
+
+O e-mail é o identificador da conta. A senha deve atender aos validadores configurados pelo Django, é armazenada somente como hash e nunca aparece na resposta. O cadastro não emite tokens; os tokens JWT serão obtidos pela rota de login da Task 03.
+
+Exemplo de requisição:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "person@example.com",
+    "password": "uma-senha-segura-123",
+    "first_name": "Alex",
+    "last_name": "Silva"
+  }'
+```
+
+Um cadastro válido retorna HTTP `201 Created` apenas com os dados públicos:
+
+```json
+{
+  "id": "3eab1028-c17c-4e90-8d11-457445c7e88a",
+  "email": "person@example.com",
+  "first_name": "Alex",
+  "last_name": "Silva"
+}
+```
+
+E-mail já cadastrado retorna HTTP `400 Bad Request`:
+
+```json
+{
+  "email": ["Já existe uma conta com este e-mail."]
+}
+```
+
+Senha reprovada pelos validadores retorna o erro associado a `password`:
+
+```json
+{
+  "password": ["Esta senha é muito curta."]
+}
+```
+
+Quando um campo obrigatório não é informado, a resposta também é HTTP `400 Bad Request`:
+
+```json
+{
+  "email": ["Este campo é obrigatório."],
+  "password": ["Este campo é obrigatório."]
+}
+```
+
+Somente `email`, `password`, `first_name` e `last_name` são aceitos. Campos desconhecidos ou administrativos são rejeitados, e o cadastro não disponibiliza listagem pública de usuários.
 
 ## Health check
 
