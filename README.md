@@ -11,6 +11,24 @@ O To-do List AH é uma aplicação para criar, organizar e acompanhar tarefas de
 | Framework de API | Django REST Framework | 3.17.1 |
 | Containerização | Docker | Utiliza a versão instalada no ambiente |
 
+## Health check
+
+Com o backend em execução, consulte:
+
+```http
+GET http://localhost:8000/api/health/
+```
+
+O endpoint responde com HTTP `200` e o seguinte JSON:
+
+```json
+{
+  "status": "online"
+}
+```
+
+O health check é público e não consulta o banco de dados ou serviços externos. Métodos diferentes de `GET` retornam HTTP `405 Method Not Allowed`.
+
 ## Backend com Docker
 
 Os comandos abaixo devem ser executados na raiz do projeto, com o Docker Desktop em funcionamento.
