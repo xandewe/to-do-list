@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build API image
+        run: docker compose build api
+
+      - name: Check Django configuration
+        run: docker compose run --rm api python manage.py check
+
+      - name: Run Django tests with PostgreSQL
+        run: docker compose run --rm api python manage.py test --verbosity 2
+
+      - name: Clean up Docker Compose resources
+        if: always()
+        run: docker compose down --volumes --remove-orphans
