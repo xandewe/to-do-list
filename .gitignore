@@ -60,3 +60,6 @@ $RECYCLE.BIN/
 
 # Internal planning documents
 docs/superpowers/
+
+# Local Git worktrees
+.worktrees/

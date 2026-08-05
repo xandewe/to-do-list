@@ -3,10 +3,17 @@ from unittest.mock import patch
 from django.db import DatabaseError
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.test import APITestCase
+
+from health.views import HealthCheckView
 
 
 class HealthCheckTests(APITestCase):
+    def test_view_explicitly_allows_public_access(self):
+        self.assertEqual(HealthCheckView.authentication_classes, [])
+        self.assertEqual(HealthCheckView.permission_classes, [AllowAny])
+
     def test_get_returns_api_and_database_online(self):
         response = self.client.get(reverse("health-check"))
 
