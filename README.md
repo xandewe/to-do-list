@@ -9,6 +9,7 @@ O To-do List AH é uma aplicação para criar, organizar e acompanhar tarefas de
 | Linguagem | Python | 3.14 |
 | Framework web | Django | 5.2.17 LTS |
 | Framework de API | Django REST Framework | 3.17.1 |
+| Autenticação | Simple JWT | 5.5.1 |
 | Banco de dados | PostgreSQL | 18.4 |
 | Driver PostgreSQL | Psycopg | 3.3.4 |
 | Containerização | Docker | Utiliza a versão instalada no ambiente |
@@ -30,8 +31,9 @@ cp .env.example .env
 | `POSTGRES_HOST` | `db` | Nome do serviço PostgreSQL no Compose |
 | `POSTGRES_PORT` | `5432` | Porta interna do PostgreSQL |
 | `POSTGRES_CONNECT_TIMEOUT` | `3` | Tempo máximo de conexão, em segundos |
+| `JWT_SIGNING_KEY` | `django-insecure-jwt-development-only` | Assina os tokens JWT no desenvolvimento |
 
-As credenciais `admin` são exclusivas para desenvolvimento. Não utilize esses valores em produção.
+As credenciais `admin` e a chave JWT de exemplo são exclusivas para desenvolvimento. Em ambientes reais, use uma `JWT_SIGNING_KEY` forte, secreta e diferente da `SECRET_KEY` do Django.
 
 ## Executar com Docker Compose
 
@@ -44,6 +46,12 @@ docker compose up --build --detach
 ```
 
 O Compose constrói a imagem da API, inicia o PostgreSQL, aguarda o banco ficar saudável, aplica as migrações e inicia o servidor Django na porta `8000`.
+
+Sempre reconstrua a imagem depois de alterar `backend/requirements.txt`:
+
+```bash
+docker compose build api
+```
 
 ### 2. Consultar o estado dos serviços
 
@@ -151,7 +159,7 @@ O cadastro é público e cria uma conta sem autenticar automaticamente o cliente
 POST /api/v1/users/
 ```
 
-O e-mail é o identificador da conta. A senha deve atender aos validadores configurados pelo Django, é armazenada somente como hash e nunca aparece na resposta. O cadastro não emite tokens; os tokens JWT serão obtidos pela rota de login da Task 03.
+O e-mail é o identificador da conta. A senha deve atender aos validadores configurados pelo Django, é armazenada somente como hash e nunca aparece na resposta. O cadastro não emite tokens; eles são obtidos separadamente pela rota de login JWT.
 
 Exemplo de requisição:
 
@@ -203,6 +211,78 @@ Quando um campo obrigatório não é informado, a resposta também é HTTP `400 
 ```
 
 Somente `email`, `password`, `first_name` e `last_name` são aceitos. Campos desconhecidos ou administrativos são rejeitados, e o cadastro não disponibiliza listagem pública de usuários.
+
+## Autenticação JWT
+
+A API usa Simple JWT 5.5.1 por fornecer emissão, validação, rotação e blacklist de tokens sem manter uma implementação JWT própria. Login, refresh e logout são públicos; as demais rotas da API exigem um access token por padrão. Cadastro e healthcheck também permanecem públicos.
+
+### Login
+
+Envie e-mail e senha para receber um access token e um refresh token:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "person@example.com",
+    "password": "uma-senha-segura-123"
+  }'
+```
+
+Credenciais válidas retornam HTTP `200 OK`:
+
+```json
+{
+  "refresh": "eyJ...",
+  "access": "eyJ..."
+}
+```
+
+O access token expira em 15 minutos. Envie-o somente no header Bearer de rotas protegidas:
+
+```bash
+curl http://localhost:8000/api/v1/recurso-protegido/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+O caminho acima representa uma rota protegida genérica; não é um endpoint implementado nesta task. Credenciais inválidas ou um usuário inativo retornam HTTP `401` com mensagem genérica, sem revelar se o e-mail existe.
+
+### Renovação
+
+O refresh token expira em sete dias e serve apenas para renovação ou logout:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/token/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{"refresh": "REFRESH_TOKEN"}'
+```
+
+Cada renovação retorna um novo access e um novo refresh. O cliente deve substituir imediatamente o refresh armazenado, pois o anterior entra na blacklist e uma nova tentativa com ele retorna HTTP `401`.
+
+### Logout
+
+Revogue o refresh atual para impedir novas renovações:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/token/blacklist/ \
+  -H "Content-Type: application/json" \
+  -d '{"refresh": "REFRESH_TOKEN"}'
+```
+
+A resposta oficial é HTTP `200 OK` com `{}`. O logout não revoga access tokens já emitidos: eles continuam válidos até o limite de 15 minutos.
+
+### Erros e armazenamento
+
+Campo obrigatório ausente retorna HTTP `400`. Credenciais inválidas, access expirado e refresh inválido, expirado ou revogado retornam HTTP `401`, por exemplo:
+
+```json
+{
+  "detail": "Token is invalid or expired",
+  "code": "token_not_valid"
+}
+```
+
+Não coloque tokens em URLs nem os registre em logs. Em aplicações web, a escolha entre memória, armazenamento do navegador ou cookies exige uma análise específica de XSS e CSRF; `localStorage` não deve ser considerado seguro de forma genérica. Cookies HttpOnly não fazem parte deste contrato.
 
 ## Health check
 

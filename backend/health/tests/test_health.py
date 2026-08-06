@@ -23,6 +23,18 @@ class HealthCheckTests(APITestCase):
             {"api": "online", "database": "online"},
         )
 
+    def test_ignores_invalid_authorization_header(self):
+        response = self.client.get(
+            reverse("health-check"),
+            HTTP_AUTHORIZATION="Bearer invalid-token",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {"api": "online", "database": "online"},
+        )
+
     @patch(
         "health.views.connection.cursor",
         side_effect=DatabaseError("database unavailable"),
