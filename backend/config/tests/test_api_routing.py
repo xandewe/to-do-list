@@ -49,7 +49,6 @@ class ApiRoutingTests(SimpleTestCase):
     def test_other_domain_endpoints_are_not_created_prematurely(self):
         paths = (
             "/api/v1/auth/",
-            "/api/v1/tasks/",
         )
 
         for path in paths:

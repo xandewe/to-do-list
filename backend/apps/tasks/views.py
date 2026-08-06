@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.tasks.models import Category
-from apps.tasks.serializers import CategorySerializer
+from apps.tasks.serializers import CategorySerializer, TaskSerializer
 from config.pagination import DefaultPageNumberPagination
 
 
@@ -60,3 +60,16 @@ class CategoryDetailView(APIView):
         category = self.get_category(request, category_id)
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TaskListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TaskSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(owner=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
