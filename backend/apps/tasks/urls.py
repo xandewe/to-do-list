@@ -1,6 +1,10 @@
 from django.urls import path
 
-from apps.tasks.views import CategoryDetailView, CategoryListCreateView
+from apps.tasks.views import (
+    CategoryDetailView,
+    CategoryListCreateView,
+    TaskListCreateView,
+)
 
 
 urlpatterns = [
@@ -10,4 +14,5 @@ urlpatterns = [
         CategoryDetailView.as_view(),
         name="category-detail",
     ),
+    path("tasks/", TaskListCreateView.as_view(), name="task-list"),
 ]

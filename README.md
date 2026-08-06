@@ -372,6 +372,39 @@ curl -X DELETE http://localhost:8000/api/v1/categories/CATEGORY_UUID/ \
 
 Consultar, alterar ou excluir uma categoria de outro usuário retorna HTTP `404`. A exclusão é física, mas não remove tarefas associadas: elas permanecem existentes com `category` igual a `null`.
 
+## Tarefas
+
+A criação de tarefas exige um access token JWT. O proprietário vem exclusivamente do token e campos gerenciados pelo sistema, como `id`, `owner_id`, `created_at` e `updated_at`, são somente leitura.
+
+Crie uma tarefa com o payload mínimo:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tasks/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Preparar relatório"
+  }'
+```
+
+Crie uma tarefa com todos os campos opcionais:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tasks/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category_id": "CATEGORY_UUID",
+    "title": "Preparar relatório",
+    "description": "Consolidar resultados do mês",
+    "status": "pending",
+    "priority": "high",
+    "due_date": "2026-08-10T18:00:00-03:00"
+  }'
+```
+
+A categoria é opcional e, quando informada, deve pertencer ao usuário autenticado. O status padrão é `pending`, a prioridade padrão é `medium` e o prazo é opcional, inclusive podendo estar no passado. A listagem de tarefas será implementada na Task 07; por enquanto, `GET /api/v1/tasks/` retorna HTTP `405`.
+
 ## Health check
 
 Com os serviços em execução, consulte:
