@@ -284,6 +284,41 @@ Campo obrigatório ausente retorna HTTP `400`. Credenciais inválidas, access ex
 
 Não coloque tokens em URLs nem os registre em logs. Em aplicações web, a escolha entre memória, armazenamento do navegador ou cookies exige uma análise específica de XSS e CSRF; `localStorage` não deve ser considerado seguro de forma genérica. Cookies HttpOnly não fazem parte deste contrato.
 
+## Usuário autenticado
+
+As operações abaixo exigem um access token JWT válido no header `Authorization`. A rota identifica o usuário exclusivamente pelo token e nunca recebe um ID de usuário.
+
+Consulte os dados públicos da conta autenticada:
+
+```bash
+curl http://localhost:8000/api/v1/users/me/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+Uma consulta válida retorna HTTP `200 OK`:
+
+```json
+{
+  "id": "3eab1028-c17c-4e90-8d11-457445c7e88a",
+  "email": "person@example.com",
+  "first_name": "Alex",
+  "last_name": "Silva"
+}
+```
+
+Atualize parcialmente o primeiro nome e/ou o sobrenome:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/users/me/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "Alexandre"
+  }'
+```
+
+Somente `first_name` e `last_name` podem ser alterados. O e-mail e o ID são somente leitura, campos omitidos são preservados e um payload vazio retorna HTTP `400`. Campos desconhecidos, de identidade ou administrativos também retornam HTTP `400` sem aplicar alterações parciais. Token ausente, inválido ou inadequado retorna HTTP `401`.
+
 ## Health check
 
 Com os serviços em execução, consulte:

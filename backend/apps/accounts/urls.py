@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from apps.accounts.views import UserRegistrationView
+from apps.accounts.views import CurrentUserView, UserRegistrationView
 
 
 urlpatterns = [
@@ -24,5 +24,6 @@ urlpatterns = [
         TokenBlacklistView.as_view(),
         name="token-blacklist",
     ),
+    path("users/me/", CurrentUserView.as_view(), name="current-user"),
     path("users/", UserRegistrationView.as_view(), name="user-registration"),
 ]
