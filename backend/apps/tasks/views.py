@@ -1,5 +1,6 @@
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -96,6 +97,29 @@ class TaskDetailView(APIView):
             id=task_id,
         )
         serializer = TaskSerializer(task, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, task_id):
+        task = get_object_or_404(
+            get_accessible_tasks(request.user),
+            id=task_id,
+        )
+        is_owner = task.owner_id == request.user.id
+        share = None if is_owner else task.current_user_shares[0]
+
+        if not is_owner and share.permission == TaskShare.Permission.VIEW:
+            raise PermissionDenied()
+        if not is_owner and "category_id" in request.data:
+            raise PermissionDenied()
+
+        serializer = TaskSerializer(
+            instance=task,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
