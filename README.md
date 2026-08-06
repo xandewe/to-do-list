@@ -403,7 +403,34 @@ curl -X POST http://localhost:8000/api/v1/tasks/ \
   }'
 ```
 
-A categoria é opcional e, quando informada, deve pertencer ao usuário autenticado. O status padrão é `pending`, a prioridade padrão é `medium` e o prazo é opcional, inclusive podendo estar no passado. A listagem de tarefas será implementada na Task 07; por enquanto, `GET /api/v1/tasks/` retorna HTTP `405`.
+A categoria é opcional e, quando informada, deve pertencer ao usuário autenticado. O status padrão é `pending`, a prioridade padrão é `medium` e o prazo é opcional, inclusive podendo estar no passado.
+
+Liste as tarefas próprias e as compartilhadas com permissão `view` ou `edit`:
+
+```bash
+curl http://localhost:8000/api/v1/tasks/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+A listagem usa os parâmetros `page` e `page_size`, é ordenada por `created_at` e `id` decrescentes e exclui tarefas privadas de outros usuários antes da paginação. Cada tarefa aparece uma única vez e informa a forma de acesso:
+
+```json
+{
+  "type": "owned",
+  "permission": "owner"
+}
+```
+
+Para uma tarefa compartilhada, `type` é `shared` e `permission` é `view` ou `edit` conforme o compartilhamento.
+
+Consulte o detalhe de uma tarefa própria ou compartilhada:
+
+```bash
+curl http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+Usuários sem acesso recebem HTTP `404`. Remover um compartilhamento revoga a leitura. As respostas expõem apenas `owner_id` e `category_id`; dados pessoais do proprietário e a lista de compartilhamentos não são retornados.
 
 ## Health check
 
