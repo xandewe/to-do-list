@@ -3,6 +3,7 @@ from django.urls import path
 from apps.tasks.views import (
     CategoryDetailView,
     CategoryListCreateView,
+    TaskDetailView,
     TaskListCreateView,
 )
 
@@ -15,4 +16,9 @@ urlpatterns = [
         name="category-detail",
     ),
     path("tasks/", TaskListCreateView.as_view(), name="task-list"),
+    path(
+        "tasks/<uuid:task_id>/",
+        TaskDetailView.as_view(),
+        name="task-detail",
+    ),
 ]
