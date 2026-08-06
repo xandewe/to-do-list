@@ -122,6 +122,14 @@ class TaskDetailView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, task_id):
+        task = get_object_or_404(
+            Task.objects.filter(id=task_id, owner=request.user),
+            id=task_id,
+        )
+        task.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 def get_accessible_tasks(user):
     current_user_shares = TaskShare.objects.filter(user=user)
