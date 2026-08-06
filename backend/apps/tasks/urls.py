@@ -5,6 +5,8 @@ from apps.tasks.views import (
     CategoryListCreateView,
     TaskDetailView,
     TaskListCreateView,
+    TaskShareDetailView,
+    TaskShareListCreateView,
 )
 
 
@@ -20,5 +22,15 @@ urlpatterns = [
         "tasks/<uuid:task_id>/",
         TaskDetailView.as_view(),
         name="task-detail",
+    ),
+    path(
+        "tasks/<uuid:task_id>/shares/",
+        TaskShareListCreateView.as_view(),
+        name="task-share-list",
+    ),
+    path(
+        "tasks/<uuid:task_id>/shares/<uuid:share_id>/",
+        TaskShareDetailView.as_view(),
+        name="task-share-detail",
     ),
 ]
