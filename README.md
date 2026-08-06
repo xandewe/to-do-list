@@ -474,6 +474,28 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
 
 O payload é sempre parcial: campos omitidos permanecem inalterados. Um corpo vazio (`{}`) retorna HTTP `400 Bad Request`. A atualização não utiliza concorrência otimista: a API não aceita versão, ETag ou `If-Match`; em atualizações concorrentes, a última gravação bem-sucedida prevalece.
 
+### Conclusão e reabertura
+
+O status é alterado no mesmo endpoint de atualização parcial; não há endpoints dedicados para concluir ou reabrir tarefas. Para concluir uma tarefa, envie somente `status` com o valor `completed`:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "completed"}'
+```
+
+Para reabri-la, envie `status` com o valor `pending`:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "pending"}'
+```
+
+Essas transições são idempotentes: repetir um `PATCH` com o status já definido retorna HTTP `200 OK` e mantém a tarefa naquele estado. O proprietário e um usuário compartilhado com permissão `edit` podem alterar o status. Um usuário com permissão `view` recebe HTTP `403 Forbidden`; sem compartilhamento, uma tarefa privada não é revelada e a atualização retorna HTTP `404 Not Found`. A API não mantém nem retorna o campo `completed_at`.
+
 ## Health check
 
 Com os serviços em execução, consulte:
