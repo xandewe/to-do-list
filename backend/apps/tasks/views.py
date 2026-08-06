@@ -1,13 +1,20 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.tasks.models import Category, Task, TaskShare
-from apps.tasks.serializers import CategorySerializer, TaskSerializer
+from apps.tasks.serializers import (
+    CategorySerializer,
+    DUPLICATE_TASK_SHARE_MESSAGE,
+    SELF_TASK_SHARE_MESSAGE,
+    TaskSerializer,
+    TaskShareSerializer,
+)
 from config.pagination import DefaultPageNumberPagination
 
 
@@ -129,6 +136,73 @@ class TaskDetailView(APIView):
         )
         task.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TaskShareListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, task_id):
+        task = get_managed_task(request, task_id)
+        shares = TaskShare.objects.filter(task=task).order_by("created_at")
+        paginator = DefaultPageNumberPagination()
+        page = paginator.paginate_queryset(shares, request, view=self)
+        serializer = TaskShareSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request, task_id):
+        task = get_managed_task(request, task_id)
+        serializer = TaskShareSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target = resolve_share_target(serializer.validated_data["email"])
+        if target.id == request.user.id:
+            raise ValidationError({"detail": SELF_TASK_SHARE_MESSAGE})
+        if TaskShare.objects.filter(task=task, user=target).exists():
+            raise ValidationError({"detail": DUPLICATE_TASK_SHARE_MESSAGE})
+
+        serializer.save(task=task, user=target, shared_by=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class TaskShareDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def get_share(request, task_id, share_id):
+        task = get_managed_task(request, task_id)
+        return get_object_or_404(TaskShare, id=share_id, task=task)
+
+    def patch(self, request, task_id, share_id):
+        share = self.get_share(request, task_id, share_id)
+        serializer = TaskShareSerializer(
+            instance=share,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, task_id, share_id):
+        share = self.get_share(request, task_id, share_id)
+        share.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def get_managed_task(request, task_id):
+    task = get_object_or_404(get_accessible_tasks(request.user), id=task_id)
+    if task.owner_id != request.user.id:
+        raise PermissionDenied()
+    return task
+
+
+def resolve_share_target(email):
+    user_model = get_user_model()
+    normalized_email = user_model.objects.normalize_email(email)
+    try:
+        return user_model.objects.get(email=normalized_email)
+    except user_model.DoesNotExist:
+        raise NotFound("Usuário não encontrado.")
 
 
 def get_accessible_tasks(user):

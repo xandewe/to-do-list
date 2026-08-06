@@ -4,7 +4,7 @@ import re
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
-from apps.tasks.models import Category, Task
+from apps.tasks.models import Category, Task, TaskShare
 
 
 DUPLICATE_CATEGORY_NAME_MESSAGE = "Já existe uma categoria com este nome."
@@ -141,3 +141,42 @@ class TaskSerializer(serializers.ModelSerializer):
                 )
 
         return super().run_validation(data)
+
+
+DUPLICATE_TASK_SHARE_MESSAGE = (
+    "Esta tarefa já está compartilhada com este usuário."
+)
+SELF_TASK_SHARE_MESSAGE = "Não é possível compartilhar a tarefa com você mesmo."
+
+
+class TaskShareSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True)
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+
+    class Meta:
+        model = TaskShare
+        fields = ("id", "email", "user_email", "permission", "created_at")
+        read_only_fields = ("id", "created_at")
+
+    def run_validation(self, data=serializers.empty):
+        if isinstance(data, Mapping):
+            if self.instance is None:
+                allowed_fields = {"email", "permission"}
+            else:
+                allowed_fields = {"permission"}
+            unexpected_fields = sorted(set(data) - allowed_fields)
+            if unexpected_fields:
+                names = ", ".join(unexpected_fields)
+                raise serializers.ValidationError(
+                    {"detail": f"Campos não permitidos: {names}."}
+                )
+            if self.partial and not data:
+                raise serializers.ValidationError(
+                    {"detail": "Informe ao menos um campo para atualização."}
+                )
+
+        return super().run_validation(data)
+
+    def create(self, validated_data):
+        validated_data.pop("email", None)
+        return super().create(validated_data)
