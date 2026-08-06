@@ -71,6 +71,7 @@ class TaskCreationApiTests(APITestCase):
                 "due_date",
                 "created_at",
                 "updated_at",
+                "access",
             },
         )
         self.assertEqual(response.data["owner_id"], str(self.user.id))
@@ -81,6 +82,10 @@ class TaskCreationApiTests(APITestCase):
         )
         self.assertIsNotNone(response.data["created_at"])
         self.assertIsNotNone(response.data["updated_at"])
+        self.assertEqual(
+            response.data["access"],
+            {"type": "owned", "permission": "owner"},
+        )
         self.assertNotIn("owner", response.data)
 
     def test_create_task_rejects_another_users_category(self):
