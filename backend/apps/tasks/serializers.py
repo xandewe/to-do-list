@@ -135,5 +135,9 @@ class TaskSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"detail": f"Campos não permitidos: {names}."}
                 )
+            if self.partial and not data:
+                raise serializers.ValidationError(
+                    {"detail": "Informe ao menos um campo para atualização."}
+                )
 
         return super().run_validation(data)

@@ -432,6 +432,48 @@ curl http://localhost:8000/api/v1/tasks/TASK_UUID/ \
 
 Usuários sem acesso recebem HTTP `404`. Remover um compartilhamento revoga a leitura. As respostas expõem apenas `owner_id` e `category_id`; dados pessoais do proprietário e a lista de compartilhamentos não são retornados.
 
+### Atualização parcial de tarefas
+
+Use `PATCH /api/v1/tasks/TASK_UUID/` para alterar somente os campos enviados. O proprietário pode atualizar todos os campos funcionais da tarefa: `category_id`, `title`, `description`, `status`, `priority` e `due_date`.
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category_id": "CATEGORY_UUID",
+    "title": "Preparar relatório final",
+    "status": "completed",
+    "priority": "high",
+    "due_date": "2026-08-12T18:00:00-03:00"
+  }'
+```
+
+Um usuário com compartilhamento `edit` pode alterar o conteúdo e o andamento, mas nunca a categoria. Por exemplo:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer EDITOR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Resultados consolidados e revisados",
+    "status": "completed",
+    "priority": "high",
+    "due_date": "2026-08-12T18:00:00-03:00"
+  }'
+```
+
+| Acesso | Ler | Alterar via `PATCH` |
+| --- | --- | --- |
+| Proprietário (`owner`) | Sim | `category_id`, `title`, `description`, `status`, `priority` e `due_date` |
+| Compartilhado (`edit`) | Sim | `title`, `description`, `status`, `priority` e `due_date` |
+| Compartilhado (`view`) | Sim | Não; retorna HTTP `403 Forbidden` |
+| Sem compartilhamento | Não | Não; consulta e atualização retornam HTTP `404 Not Found` |
+
+`category_id` é exclusivamente do proprietário: se um editor o enviar, a API responde HTTP `403 Forbidden` e não aplica nenhuma alteração. Identificadores e metadados (`id`, `owner_id`, `created_at`, `updated_at` e `access`) são somente leitura e campos desconhecidos retornam HTTP `400 Bad Request`.
+
+O payload é sempre parcial: campos omitidos permanecem inalterados. Um corpo vazio (`{}`) retorna HTTP `400 Bad Request`. A atualização não utiliza concorrência otimista: a API não aceita versão, ETag ou `If-Match`; em atualizações concorrentes, a última gravação bem-sucedida prevalece.
+
 ## Health check
 
 Com os serviços em execução, consulte:
