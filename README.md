@@ -509,6 +509,101 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
 
 Essas transições são idempotentes: repetir um `PATCH` com o status já definido retorna HTTP `200 OK` e mantém a tarefa naquele estado. O proprietário e um usuário compartilhado com permissão `edit` podem alterar o status. Um usuário com permissão `view` recebe HTTP `403 Forbidden`; sem compartilhamento, uma tarefa privada não é revelada e a atualização retorna HTTP `404 Not Found`. A API não mantém nem retorna o campo `completed_at`.
 
+### Filtros da listagem
+
+A listagem de tarefas aceita filtros opcionais por status e por categoria, combináveis entre si e com a paginação. Os filtros atuam apenas sobre as tarefas acessíveis ao usuário (próprias e compartilhadas).
+
+| Parâmetro | Valores aceitos | Efeito |
+| --- | --- | --- |
+| `status` | `pending`, `completed` | Retorna apenas as tarefas naquele status |
+| `category` | UUID de uma categoria | Retorna apenas as tarefas daquela categoria |
+
+Filtre as tarefas concluídas de uma categoria específica:
+
+```bash
+curl "http://localhost:8000/api/v1/tasks/?status=completed&category=CATEGORY_UUID" \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+A categoria é filtrada pelo seu UUID, o mesmo identificador usado em `category_id`, garantindo um filtro sem ambiguidade mesmo entre usuários que reutilizam o mesmo nome de categoria. Um valor inválido é ignorado sem gerar erro: um `status` fora das opções ou um `category` que não seja um UUID válido não altera a listagem nem retorna HTTP `400`.
+
+### Compartilhamento de tarefas
+
+Cada tarefa pode ser compartilhada pelo proprietário com outros usuários já cadastrados, concedendo acesso de leitura (`view`) ou de edição (`edit`). As rotas de compartilhamento são aninhadas na tarefa e exclusivas do proprietário: um usuário apenas compartilhado recebe HTTP `403 Forbidden` e um usuário sem acesso recebe HTTP `404 Not Found`, sem revelar a existência da tarefa. Isso também impede que um usuário com permissão `edit` redistribua a tarefa.
+
+Liste os acessos concedidos a uma tarefa própria (resposta paginada):
+
+```bash
+curl http://localhost:8000/api/v1/tasks/TASK_UUID/shares/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN"
+```
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "share-uuid",
+      "user_email": "colega@example.com",
+      "permission": "edit",
+      "created_at": "2026-08-06T12:00:00-03:00"
+    }
+  ]
+}
+```
+
+Compartilhe uma tarefa informando o e-mail do usuário. A permissão é opcional e assume `view` por padrão:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tasks/TASK_UUID/shares/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "colega@example.com",
+    "permission": "edit"
+  }'
+```
+
+Um compartilhamento válido retorna HTTP `201 Created` e expõe apenas o e-mail do usuário, a permissão e os metadados do compartilhamento:
+
+```json
+{
+  "id": "share-uuid",
+  "user_email": "colega@example.com",
+  "permission": "edit",
+  "created_at": "2026-08-06T12:00:00-03:00"
+}
+```
+
+O compartilhamento exige uma conta existente. Alguns erros comuns:
+
+| Situação | Status |
+| --- | --- |
+| E-mail sem conta cadastrada | `404 Not Found` |
+| Compartilhar a tarefa consigo mesmo | `400 Bad Request` |
+| Tarefa já compartilhada com o mesmo usuário | `400 Bad Request` |
+| `permission` diferente de `view`/`edit` | `400 Bad Request` |
+
+Altere a permissão de um compartilhamento existente:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/shares/SHARE_UUID/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"permission": "view"}'
+```
+
+Somente `permission` pode ser alterado; um corpo vazio retorna HTTP `400 Bad Request`. Revogue um compartilhamento:
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/tasks/TASK_UUID/shares/SHARE_UUID/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN"
+```
+
+A revogação retorna HTTP `204 No Content` e tem efeito imediato: o usuário afetado deixa de listar e de acessar a tarefa, passando a receber HTTP `404` nas consultas e atualizações seguintes.
+
 ## Health check
 
 Com os serviços em execução, consulte:
