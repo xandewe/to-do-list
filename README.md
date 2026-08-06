@@ -474,6 +474,19 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
 
 O payload é sempre parcial: campos omitidos permanecem inalterados. Um corpo vazio (`{}`) retorna HTTP `400 Bad Request`. A atualização não utiliza concorrência otimista: a API não aceita versão, ETag ou `If-Match`; em atualizações concorrentes, a última gravação bem-sucedida prevalece.
 
+### Exclusão de tarefas
+
+Somente o proprietário pode excluir uma tarefa. Envie `DELETE` para o detalhe usando o token do proprietário:
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/tasks/TASK_UUID/ \
+  -H "Authorization: Bearer OWNER_ACCESS_TOKEN"
+```
+
+Uma exclusão bem-sucedida retorna HTTP `204 No Content`, sem corpo de resposta. A exclusão é física; não há *soft delete*. Os registros `TaskShare` associados são removidos em cascata, enquanto a categoria da tarefa e as demais tarefas (inclusive as da mesma categoria ou do mesmo proprietário) são preservadas.
+
+Uma tarefa compartilhada pode ser lida ou editada conforme a permissão, mas usuários compartilhados — inclusive com permissão `edit` — não podem excluí-la: a tentativa retorna HTTP `404 Not Found`, sem revelar uma rota de exclusão separada. Depois da exclusão, a tarefa também deixa de estar acessível aos usuários compartilhados e retorna HTTP `404`; uma segunda tentativa de excluir a mesma tarefa retorna igualmente HTTP `404`.
+
 ### Conclusão e reabertura
 
 O status é alterado no mesmo endpoint de atualização parcial; não há endpoints dedicados para concluir ou reabrir tarefas. Para concluir uma tarefa, envie somente `status` com o valor `completed`:
