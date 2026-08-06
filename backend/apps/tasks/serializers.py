@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from datetime import timezone
 import re
 
 from django.db import IntegrityError, transaction
@@ -80,14 +79,6 @@ class CategorySerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.UUIDField(read_only=True)
     access = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(
-        read_only=True,
-        default_timezone=timezone.utc,
-    )
-    updated_at = serializers.DateTimeField(
-        read_only=True,
-        default_timezone=timezone.utc,
-    )
     category_id = serializers.PrimaryKeyRelatedField(
         source="category",
         queryset=Category.objects.none(),
