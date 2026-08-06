@@ -83,7 +83,10 @@ class TaskUpdateApiTests(APITestCase):
         self.assertGreater(task.updated_at, original_updated_at)
         self.assertEqual(response.data["owner_id"], str(self.owner.id))
         self.assertEqual(response.data["category_id"], category.id)
-        self.assertEqual(response.data["created_at"], original_created_at.isoformat().replace("+00:00", "Z"))
+        self.assertEqual(
+            parse_datetime(response.data["created_at"]),
+            original_created_at,
+        )
         self.assertEqual(parse_datetime(response.data["updated_at"]), task.updated_at)
         self.assertEqual(
             response.data["access"],
