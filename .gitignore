@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+backend/.venv/
+AGENTS.md
 
 # Build outputs and test coverage
 dist/

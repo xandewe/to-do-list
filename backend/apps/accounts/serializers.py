@@ -29,6 +29,42 @@ class StrictEmailField(StrictStringFieldMixin, serializers.EmailField):
     pass
 
 
+class CurrentUserSerializer(serializers.ModelSerializer):
+    first_name = StrictCharField(
+        required=False,
+        allow_blank=True,
+        allow_null=False,
+        max_length=150,
+    )
+    last_name = StrictCharField(
+        required=False,
+        allow_blank=True,
+        allow_null=False,
+        max_length=150,
+    )
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "first_name", "last_name")
+        read_only_fields = ("id", "email")
+
+    def run_validation(self, data=serializers.empty):
+        if isinstance(data, Mapping):
+            allowed_fields = {"first_name", "last_name"}
+            unexpected_fields = sorted(set(data) - allowed_fields)
+            if unexpected_fields:
+                names = ", ".join(unexpected_fields)
+                raise serializers.ValidationError(
+                    {"detail": f"Campos não permitidos: {names}."}
+                )
+            if not data:
+                raise serializers.ValidationError(
+                    {"detail": "Informe ao menos um campo para atualização."}
+                )
+
+        return super().run_validation(data)
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     email = StrictEmailField(max_length=254, allow_null=False)
     password = StrictCharField(
