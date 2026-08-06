@@ -443,7 +443,7 @@ curl -X PATCH http://localhost:8000/api/v1/tasks/TASK_UUID/ \
   -d '{
     "category_id": "CATEGORY_UUID",
     "title": "Preparar relatório final",
-    "status": "in_progress",
+    "status": "completed",
     "priority": "high",
     "due_date": "2026-08-12T18:00:00-03:00"
   }'
