@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
@@ -75,7 +77,7 @@ class TaskListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        tasks = get_accessible_tasks(request.user)
+        tasks = filter_tasks(get_accessible_tasks(request.user), request)
         paginator = DefaultPageNumberPagination()
         page = paginator.paginate_queryset(tasks, request, view=self)
         serializer = TaskSerializer(
@@ -203,6 +205,23 @@ def resolve_share_target(email):
         return user_model.objects.get(email=normalized_email)
     except user_model.DoesNotExist:
         raise NotFound("Usuário não encontrado.")
+
+
+def filter_tasks(tasks, request):
+    status_value = request.query_params.get("status")
+    if status_value in Task.Status.values:
+        tasks = tasks.filter(status=status_value)
+
+    category_value = request.query_params.get("category")
+    if category_value:
+        try:
+            category_id = uuid.UUID(category_value)
+        except ValueError:
+            category_id = None
+        if category_id is not None:
+            tasks = tasks.filter(category_id=category_id)
+
+    return tasks
 
 
 def get_accessible_tasks(user):
