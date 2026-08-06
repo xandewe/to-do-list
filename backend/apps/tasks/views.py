@@ -1,10 +1,11 @@
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.tasks.models import Category
+from apps.tasks.models import Category, Task, TaskShare
 from apps.tasks.serializers import CategorySerializer, TaskSerializer
 from config.pagination import DefaultPageNumberPagination
 
@@ -65,6 +66,17 @@ class CategoryDetailView(APIView):
 class TaskListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        tasks = get_accessible_tasks(request.user)
+        paginator = DefaultPageNumberPagination()
+        page = paginator.paginate_queryset(tasks, request, view=self)
+        serializer = TaskSerializer(
+            page,
+            many=True,
+            context={"request": request},
+        )
+        return paginator.get_paginated_response(serializer.data)
+
     def post(self, request):
         serializer = TaskSerializer(
             data=request.data,
@@ -73,3 +85,30 @@ class TaskListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(owner=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class TaskDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, task_id):
+        task = get_object_or_404(
+            get_accessible_tasks(request.user),
+            id=task_id,
+        )
+        serializer = TaskSerializer(task, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def get_accessible_tasks(user):
+    current_user_shares = TaskShare.objects.filter(user=user)
+    return (
+        Task.objects.filter(Q(owner=user) | Q(shares__user=user))
+        .distinct()
+        .prefetch_related(
+            Prefetch(
+                "shares",
+                queryset=current_user_shares,
+                to_attr="current_user_shares",
+            )
+        )
+    )

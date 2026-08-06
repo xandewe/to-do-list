@@ -78,6 +78,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.UUIDField(read_only=True)
+    access = serializers.SerializerMethodField()
     category_id = serializers.PrimaryKeyRelatedField(
         source="category",
         queryset=Category.objects.none(),
@@ -98,6 +99,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "due_date",
             "created_at",
             "updated_at",
+            "access",
         )
         read_only_fields = ("id", "owner_id", "created_at", "updated_at")
 
@@ -108,6 +110,14 @@ class TaskSerializer(serializers.ModelSerializer):
             self.fields["category_id"].queryset = Category.objects.filter(
                 owner=request.user
             )
+
+    def get_access(self, task):
+        request = self.context["request"]
+        if task.owner_id == request.user.id:
+            return {"type": "owned", "permission": "owner"}
+
+        share = task.current_user_shares[0]
+        return {"type": "shared", "permission": share.permission}
 
     def run_validation(self, data=serializers.empty):
         if isinstance(data, Mapping):
