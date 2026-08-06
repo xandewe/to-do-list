@@ -319,6 +319,59 @@ curl -X PATCH http://localhost:8000/api/v1/users/me/ \
 
 Somente `first_name` e `last_name` podem ser alterados. O e-mail e o ID são somente leitura, campos omitidos são preservados e um payload vazio retorna HTTP `400`. Campos desconhecidos, de identidade ou administrativos também retornam HTTP `400` sem aplicar alterações parciais. Token ausente, inválido ou inadequado retorna HTTP `401`.
 
+## Categorias
+
+Todas as operações de categorias exigem um access token JWT. Cada categoria pertence ao usuário autenticado; o proprietário não é aceito no payload nem retornado pela API. O nome é único por usuário, enquanto usuários diferentes podem reutilizar o mesmo nome.
+
+A cor é opcional e deve ser vazia ou usar o formato hexadecimal completo `#RRGGBB`. A listagem é ordenada por nome e usa os parâmetros de paginação `page` e `page_size` descritos nas convenções da API.
+
+Liste as categorias do usuário autenticado:
+
+```bash
+curl http://localhost:8000/api/v1/categories/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+Crie uma categoria:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/categories/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Trabalho",
+    "description": "Atividades profissionais",
+    "color": "#336699"
+  }'
+```
+
+Consulte uma categoria própria:
+
+```bash
+curl http://localhost:8000/api/v1/categories/CATEGORY_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+Atualize parcialmente uma categoria:
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/categories/CATEGORY_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Projetos"
+  }'
+```
+
+Exclua uma categoria:
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/categories/CATEGORY_UUID/ \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+Consultar, alterar ou excluir uma categoria de outro usuário retorna HTTP `404`. A exclusão é física, mas não remove tarefas associadas: elas permanecem existentes com `category` igual a `null`.
+
 ## Health check
 
 Com os serviços em execução, consulte:
