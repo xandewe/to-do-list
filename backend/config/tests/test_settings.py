@@ -10,6 +10,19 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from config.pagination import DefaultPageNumberPagination
 
 
+class EnvironmentConfigurationTests(SimpleTestCase):
+    def test_secret_key_is_read_from_environment(self):
+        self.assertEqual(
+            settings.SECRET_KEY,
+            os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-only"),
+        )
+
+    def test_allowed_hosts_defaults_to_localhost(self):
+        # O runner de testes anexa "testserver"; validamos os hosts locais.
+        self.assertIn("localhost", settings.ALLOWED_HOSTS)
+        self.assertIn("127.0.0.1", settings.ALLOWED_HOSTS)
+
+
 class RestFrameworkConfigurationTests(SimpleTestCase):
     def test_rest_framework_is_installed(self):
         self.assertIn("rest_framework", settings.INSTALLED_APPS)
