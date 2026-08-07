@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../lib/apiErrors";
 import { toDateInput, fromDateInput } from "../lib/taskFormat";
 import { useToast } from "../context/ToastContext";
 import ConfirmDialog from "../components/ConfirmDialog";
+import SharePanel from "../components/SharePanel";
 
 function toDraft(task) {
   return {
@@ -217,6 +218,19 @@ export default function TaskDetail() {
           </button>
         )}
       </div>
+
+      {isOwner ? (
+        <SharePanel taskId={task.id} />
+      ) : (
+        <div className="card" style={{ background: "var(--color-accent-2-100)", marginTop: 26 }}>
+          <p className="card-title" style={{ margin: 0 }}>
+            Tarefa compartilhada
+          </p>
+          <p className="card-body" style={{ margin: 0 }}>
+            Esta tarefa foi compartilhada com você. Só o proprietário gerencia acessos e exclusão.
+          </p>
+        </div>
+      )}
 
       <p style={{ fontSize: 12, color: "var(--color-neutral-600)", margin: "26px 0 0" }}>
         Criada em {new Date(task.created_at).toLocaleDateString("pt-BR")} · id {task.id}
