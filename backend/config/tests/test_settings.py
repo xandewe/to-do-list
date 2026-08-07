@@ -12,10 +12,7 @@ from config.pagination import DefaultPageNumberPagination
 
 class EnvironmentConfigurationTests(SimpleTestCase):
     def test_secret_key_is_read_from_environment(self):
-        self.assertEqual(
-            settings.SECRET_KEY,
-            os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-only"),
-        )
+        self.assertEqual(settings.SECRET_KEY, os.environ["DJANGO_SECRET_KEY"])
 
     def test_allowed_hosts_defaults_to_localhost(self):
         # O runner de testes anexa "testserver"; validamos os hosts locais.

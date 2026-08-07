@@ -35,6 +35,8 @@ cp .env.example .env
 | `POSTGRES_CONNECT_TIMEOUT` | `3` | Tempo máximo de conexão, em segundos |
 | `JWT_SIGNING_KEY` | `django-insecure-jwt-development-only` | Assina os tokens JWT no desenvolvimento |
 
+A `DJANGO_SECRET_KEY` é obrigatória: sem ela definida no ambiente, a aplicação não inicia. O Compose e o `.env.example` já fornecem um valor de desenvolvimento, então o fluxo local funciona sem configuração extra.
+
 As credenciais `admin` e as chaves de exemplo são exclusivas para desenvolvimento. Em ambientes reais, defina uma `DJANGO_SECRET_KEY` forte e secreta e uma `JWT_SIGNING_KEY` também forte, secreta e diferente da `DJANGO_SECRET_KEY`. Ajuste `DJANGO_ALLOWED_HOSTS` para os domínios reais da aplicação.
 
 ## Executar com Docker Compose

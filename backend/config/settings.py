@@ -2,10 +2,16 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-development-only")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "A variável de ambiente DJANGO_SECRET_KEY é obrigatória."
+    )
 DEBUG = True
 ALLOWED_HOSTS = [
     host.strip()
