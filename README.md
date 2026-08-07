@@ -52,7 +52,7 @@ Os comandos devem ser executados na raiz do projeto, com o Docker Desktop em fun
 docker compose up --build --detach
 ```
 
-O Compose constrói a imagem da API, inicia o PostgreSQL, aguarda o banco ficar saudável, aplica as migrações e inicia o servidor Django na porta `8000`.
+O Compose constrói as imagens da API e do frontend, inicia o PostgreSQL, aguarda o banco ficar saudável, aplica as migrações e inicia o servidor Django na porta `8000`. O frontend (Vite servindo o SPA e fazendo proxy de `/api/` para a API) fica em `http://localhost:8080`.
 
 Sempre reconstrua a imagem depois de alterar `backend/requirements.txt`:
 
@@ -66,7 +66,7 @@ docker compose build api
 docker compose ps
 ```
 
-Os serviços `api` e `db` devem aparecer como `healthy`.
+Os serviços `api`, `db` e `frontend` devem aparecer como `healthy`.
 
 ### 3. Acompanhar os logs da API
 

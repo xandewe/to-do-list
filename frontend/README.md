@@ -39,6 +39,23 @@ npm run build    # gera dist/
 npm run preview  # serve o build de produção localmente
 ```
 
+## Docker
+
+O frontend é dockerizado como parte do `compose.yaml` na raiz do projeto. A
+imagem builda o SPA e o serve com o próprio Vite (`vite preview`), que também faz
+**proxy** de `/api/` para o serviço `api` (mesma origem, sem CORS).
+
+A partir da raiz do projeto:
+
+```bash
+docker compose up --build --detach
+```
+
+Sobe `db` + `api` + `frontend`. A aplicação fica em `http://localhost:8080`
+(configurável por `FRONTEND_PORT`). Como o SPA é servido na mesma origem da API,
+o build usa caminhos relativos (`VITE_API_BASE_URL` vazio); para apontar a uma
+API externa, defina `FRONTEND_API_BASE_URL` antes do build.
+
 ## Estrutura
 
 ```

@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+
+# Não vazar env de desenvolvimento no build (o dev aponta para localhost:8000;
+# a imagem usa base relativa via ARG). O Vite carregaria .env/.env.* no build.
+.env
+.env.*
+
+# Metadados e artefatos que não pertencem à imagem
+.git
+.gitignore
+*.log
+npm-debug.log*
+Dockerfile
+.dockerignore
+README.md

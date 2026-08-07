@@ -9,7 +9,12 @@ import {
 
 // Origem base da API. Sem barra final; os services montam os caminhos a partir
 // daqui. O health check vive fora do /api/v1 e é tratado no service dele.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+//
+// - undefined (sem env): default de dev, chama http://localhost:8000 direto.
+// - "" (build Docker): caminhos relativos (/api/v1, /api/health), servidos pelo
+//   reverse proxy do nginx na mesma origem — sem CORS.
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = rawBaseUrl === undefined ? "http://localhost:8000" : rawBaseUrl;
 
 export const API_ROOT = API_BASE_URL;
 const API_V1 = `${API_BASE_URL}/api/v1`;
