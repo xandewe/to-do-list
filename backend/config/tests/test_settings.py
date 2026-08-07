@@ -19,6 +19,16 @@ class EnvironmentConfigurationTests(SimpleTestCase):
         self.assertIn("localhost", settings.ALLOWED_HOSTS)
         self.assertIn("127.0.0.1", settings.ALLOWED_HOSTS)
 
+    def test_cors_app_is_installed(self):
+        self.assertIn("corsheaders", settings.INSTALLED_APPS)
+
+    def test_cors_middleware_runs_before_common_middleware(self):
+        middleware = settings.MIDDLEWARE
+        cors = "corsheaders.middleware.CorsMiddleware"
+        common = "django.middleware.common.CommonMiddleware"
+        self.assertIn(cors, middleware)
+        self.assertLess(middleware.index(cors), middleware.index(common))
+
 
 class RestFrameworkConfigurationTests(SimpleTestCase):
     def test_rest_framework_is_installed(self):

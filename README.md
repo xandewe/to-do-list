@@ -27,6 +27,7 @@ cp .env.example .env
 | --- | --- | --- |
 | `DJANGO_SECRET_KEY` | `django-insecure-development-only` | Assina sessões, tokens e demais operações criptográficas do Django |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Lista de hosts permitidos, separada por vírgula |
+| `DJANGO_CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Origens autorizadas a chamar a API pelo navegador (CORS), separadas por vírgula |
 | `POSTGRES_DB` | `todo_list_ah` | Nome do banco e do volume Docker |
 | `POSTGRES_USER` | `admin` | Usuário administrativo local |
 | `POSTGRES_PASSWORD` | `admin` | Senha administrativa local |
@@ -37,7 +38,9 @@ cp .env.example .env
 
 A `DJANGO_SECRET_KEY` é obrigatória: sem ela definida no ambiente, a aplicação não inicia. O Compose e o `.env.example` já fornecem um valor de desenvolvimento, então o fluxo local funciona sem configuração extra.
 
-As credenciais `admin` e as chaves de exemplo são exclusivas para desenvolvimento. Em ambientes reais, defina uma `DJANGO_SECRET_KEY` forte e secreta e uma `JWT_SIGNING_KEY` também forte, secreta e diferente da `DJANGO_SECRET_KEY`. Ajuste `DJANGO_ALLOWED_HOSTS` para os domínios reais da aplicação.
+As credenciais `admin` e as chaves de exemplo são exclusivas para desenvolvimento. Em ambientes reais, defina uma `DJANGO_SECRET_KEY` forte e secreta e uma `JWT_SIGNING_KEY` também forte, secreta e diferente da `DJANGO_SECRET_KEY`. Ajuste `DJANGO_ALLOWED_HOSTS` para os domínios reais da aplicação e `DJANGO_CORS_ALLOWED_ORIGINS` para as origens do frontend.
+
+O valor padrão de `DJANGO_CORS_ALLOWED_ORIGINS` corresponde ao servidor de desenvolvimento do Vite. A API só aceita requisições do navegador vindas das origens listadas; a autenticação é feita pelo header `Authorization: Bearer`, sem cookies, então o CORS não habilita credenciais.
 
 ## Executar com Docker Compose
 
